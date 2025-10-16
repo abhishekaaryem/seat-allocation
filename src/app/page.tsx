@@ -42,12 +42,9 @@ export default function DashboardPage() {
 
   const handleGeneratePlan = useCallback(() => {
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      const newArrangement = generateSeatingArrangement(students, halls);
-      setSeatingArrangement(newArrangement);
-      setIsLoading(false);
-    }, 1000);
+    const newArrangement = generateSeatingArrangement(students, halls);
+    setSeatingArrangement(newArrangement);
+    setIsLoading(false);
   }, [students, halls]);
   
   const totalSeats = halls.reduce((acc, hall) => acc + hall.capacity, 0);
