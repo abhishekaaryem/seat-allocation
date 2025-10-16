@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import StatsCards from '@/components/dashboard/stats-cards';
 import SeatingView from '@/components/dashboard/seating-view';
@@ -40,7 +40,7 @@ export default function DashboardPage() {
   const [seatingArrangement, setSeatingArrangement] = useState<SeatingArrangement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGeneratePlan = () => {
+  const handleGeneratePlan = useCallback(() => {
     setIsLoading(true);
     // Simulate API call
     setTimeout(() => {
@@ -48,7 +48,7 @@ export default function DashboardPage() {
       setSeatingArrangement(newArrangement);
       setIsLoading(false);
     }, 1000);
-  };
+  }, [students, halls]);
   
   const totalSeats = halls.reduce((acc, hall) => acc + hall.capacity, 0);
 

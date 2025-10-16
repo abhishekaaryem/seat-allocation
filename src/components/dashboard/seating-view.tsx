@@ -1,11 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Info, Loader2 } from 'lucide-react';
-import type { Hall, SeatingArrangement } from '@/lib/types';
+import type { Hall, SeatingArrangement, AssignedSeat } from '@/lib/types';
 import SeatCard from './seat-card';
 
 const BRANCH_COLORS = {
@@ -22,7 +21,55 @@ type SeatingViewProps = {
   isLoading: boolean;
 };
 
-export default function SeatingView({ halls, seatingArrangement, isLoading }: SeatingViewProps) {
+export default function SeatingView({ halls, seatingArrangement: initialSeatingArrangement, isLoading }: SeatingViewProps) {
+  const [seatingArrangement, setSeatingArrangement] = useState<SeatingArrangement | null>(initialSeatingArrangement);
+  const [draggedSeat, setDraggedSeat] = useState<AssignedSeat | null>(null);
+
+  useEffect(() => {
+    setSeatingArrangement(initialSeatingArrangement);
+  }, [initialSeatingArrangement]);
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, seat: AssignedSeat) => {
+    setDraggedSeat(seat);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetSeatKey: string) => {
+    e.preventDefault();
+    if (!draggedSeat || !seatingArrangement) return;
+
+    const [hallId, rowStr, colStr] = targetSeatKey.split('-');
+    const targetRow = parseInt(rowStr, 10);
+    const targetCol = parseInt(colStr, 10);
+
+    const newArrangement = [...seatingArrangement];
+
+    const targetSeatIndex = newArrangement.findIndex(
+      (s) => s.hallId === hallId && s.row === targetRow && s.col === targetCol
+    );
+    const draggedSeatIndex = newArrangement.findIndex((s) => s === draggedSeat);
+
+    if (draggedSeatIndex === -1) return;
+
+    if (targetSeatIndex !== -1) {
+      // Swap students
+      const targetStudent = newArrangement[targetSeatIndex].student;
+      newArrangement[targetSeatIndex].student = draggedSeat.student;
+      newArrangement[draggedSeatIndex].student = targetStudent;
+    } else {
+      // Move to empty seat
+      const dragged = newArrangement.splice(draggedSeatIndex, 1)[0];
+      dragged.hallId = hallId;
+      dragged.row = targetRow;
+      dragged.col = targetCol;
+      newArrangement.push(dragged);
+    }
+    setSeatingArrangement(newArrangement);
+    setDraggedSeat(null);
+  };
 
   const conflicts = useMemo(() => {
     const conflictSet = new Set<string>();
@@ -95,7 +142,7 @@ export default function SeatingView({ halls, seatingArrangement, isLoading }: Se
               );
               return {
                 key: `${hall.id}-${row}-${col}`,
-                student: assignedSeat?.student || null,
+                assignedSeat: assignedSeat || null,
                 isConflict: conflicts.has(`${hall.id}-${row}-${col}`),
               };
             });
@@ -111,12 +158,19 @@ export default function SeatingView({ halls, seatingArrangement, isLoading }: Se
                         }}
                     >
                         {seatsInHall.map((seat) => (
-                            <SeatCard
+                          <div
                             key={seat.key}
-                            student={seat.student}
-                            isConflict={seat.isConflict}
-                            branchColor={seat.student ? BRANCH_COLORS[seat.student.branch] : ''}
+                            draggable={!!seat.assignedSeat}
+                            onDragStart={(e) => seat.assignedSeat && handleDragStart(e, seat.assignedSeat)}
+                            onDragOver={handleDragOver}
+                            onDrop={(e) => handleDrop(e, seat.key)}
+                          >
+                            <SeatCard
+                              student={seat.assignedSeat?.student || null}
+                              isConflict={seat.isConflict}
+                              branchColor={seat.assignedSeat?.student ? BRANCH_COLORS[seat.assignedSeat.student.branch] : ''}
                             />
+                          </div>
                         ))}
                     </div>
                 </div>
