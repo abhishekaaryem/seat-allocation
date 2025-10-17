@@ -53,3 +53,56 @@ The application is divided into several key pages, each handling a specific part
 - **Attendance Sheet Report**: Users can download a PDF attendance sheet for each hall. The sheet lists all students assigned to that hall with columns for their ID, name, branch, and a space for their signature.
 
 This comprehensive workflow ensures that managing exam seating is an efficient, intuitive, and error-free process.
+
+## Data Flow Diagram
+
+The diagram below illustrates how data moves through the application, from initial setup to report generation.
+
+```
+[ Data Source: /lib/placeholder-data.ts ]
+  |
+  +--> `students`: Array<Student>
+  |
+  +--> `halls`: Array<Hall>
+  
+       |
+       |  (Loaded into respective pages)
+       v
+
++--------------------------+      +--------------------------+
+|      Students Page       |      |        Halls Page        |
+|  - Displays `students`   |      |    - Displays `halls`      |
+|  - Manages student data  |      |    - Manages hall data     |
++--------------------------+      +--------------------------+
+
+       |                                  |
+       +----------------+-----------------+
+                        |
+                        v
+
++-----------------------------------------------------------------+
+|                         Dashboard Page                          |
+|  - Loads `students` and `halls` from placeholder data.          |
+|  - User clicks "Generate Seating Plan".                         |
+|-----------------------------------------------------------------|
+|       `generateSeatingArrangement(students, halls)`             |
+|         |                                                       |
+|         v                                                       |
+|  `seatingArrangement`: Array<AssignedSeat> (State)              |
+|-----------------------------------------------------------------|
+|  - `SeatingView` component renders the arrangement.             |
+|  - User drag-and-drops a student.                               |
+|  - `handleDrop` updates the `seatingArrangement` state.         |
+|  - UI re-renders with new positions and conflict highlighting.  |
++-----------------------------------------------------------------+
+                        |
+                        | (State is self-contained on the client)
+                        v
++-----------------------------------------------------------------+
+|                          Reports Page                           |
+|  - Re-uses `generateSeatingArrangement` to create a fresh plan. |
+|  - `jsPDF` and `jspdf-autotable` use this data.                 |
+|  - Generates and downloads "Seating Chart" PDF.                 |
+|  - Generates and downloads "Attendance Sheets" PDF.             |
++-----------------------------------------------------------------+
+```
