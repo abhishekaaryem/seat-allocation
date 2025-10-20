@@ -31,7 +31,7 @@ export default function StudentsPage() {
         open={isUploadOpen} 
         onOpenChange={setIsUploadOpen} 
         uploadType="students"
-        onDataUploaded={({students, halls}) => {
+        onDataUploaded={({students}) => {
             if (students) setStudents(students);
         }}
       />
