@@ -7,18 +7,30 @@ import React from "react";
 
 type SeatCardProps = {
   student: Student | null;
+  seatNumber: string;
   isConflict: boolean;
   branchColor: string;
   isBeingDragged?: boolean;
   children?: React.ReactNode;
 };
 
-export default function SeatCard({ student, isConflict, branchColor, isBeingDragged, children }: SeatCardProps) {
+export default function SeatCard({ student, seatNumber, isConflict, branchColor, isBeingDragged, children }: SeatCardProps) {
   if (!student) {
     return (
-      <Card className="aspect-square bg-muted/50 border-dashed flex items-center justify-center">
-        <User className="w-6 h-6 text-muted-foreground/50" />
-      </Card>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Card className="aspect-square bg-muted/50 border-dashed flex flex-col items-center justify-center p-1 text-center">
+              <User className="w-5 h-5 text-muted-foreground/50" />
+              <p className="text-xs text-muted-foreground/60 mt-1">{seatNumber}</p>
+            </Card>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Empty Seat</p>
+            <p>Seat: {seatNumber}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
 
@@ -37,13 +49,14 @@ export default function SeatCard({ student, isConflict, branchColor, isBeingDrag
             {children}
             <CardContent className="p-0 flex flex-col items-center justify-center gap-1">
               {isConflict && <AlertTriangle className="w-4 h-4 text-destructive" />}
-              <p className="text-xs font-bold text-foreground truncate">{student.id}</p>
+              <p className="text-xs font-bold text-foreground truncate">{seatNumber}</p>
               <p className="text-[10px] font-medium text-foreground/80">{student.branch}</p>
             </CardContent>
           </Card>
         </TooltipTrigger>
         <TooltipContent>
           <p className="font-semibold">{student.name}</p>
+          <p>Seat: {seatNumber}</p>
           <p>Branch: {student.branch}</p>
           <p>Student ID: {student.id}</p>
         </TooltipContent>
