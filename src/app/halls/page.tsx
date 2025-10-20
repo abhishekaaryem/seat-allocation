@@ -7,7 +7,7 @@ import { halls as initialHalls } from '@/lib/placeholder-data';
 import { PlusCircle, Upload } from 'lucide-react';
 import { HallFormDialog } from '@/components/hall-form-dialog';
 import { DataUploadDialog } from '@/components/data-upload-dialog';
-import type { Hall, Student } from '@/lib/types';
+import type { Hall } from '@/lib/types';
 
 export default function HallsPage() {
     const [halls, setHalls] = useState<Hall[]>(initialHalls);
@@ -23,7 +23,7 @@ export default function HallsPage() {
         <div className="flex gap-2">
             <Button variant="outline" onClick={() => setIsUploadOpen(true)}>
                 <Upload className="mr-2 h-4 w-4" />
-                Upload Data
+                Upload Halls
             </Button>
             <Button onClick={() => setIsFormOpen(true)}>
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -36,6 +36,7 @@ export default function HallsPage() {
       <DataUploadDialog
         open={isUploadOpen}
         onOpenChange={setIsUploadOpen}
+        uploadType="halls"
         onDataUploaded={({ students, halls }) => {
           if (halls) setHalls(halls);
         }}

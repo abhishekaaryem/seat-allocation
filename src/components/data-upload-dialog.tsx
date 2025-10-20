@@ -11,22 +11,29 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, UploadCloud } from "lucide-react";
+import { Loader2, UploadCloud, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
 import type { Hall, Student } from "@/lib/types";
+
+type UploadType = 'students' | 'halls' | 'all';
 
 type DataUploadDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDataUploaded: (data: { students?: Student[], halls?: Hall[] }) => void;
+  uploadType?: UploadType;
 };
 
-export function DataUploadDialog({ open, onOpenChange, onDataUploaded }: DataUploadDialogProps) {
+export function DataUploadDialog({ open, onOpenChange, onDataUploaded, uploadType = 'all' }: DataUploadDialogProps) {
   const { toast } = useToast();
   const [studentFile, setStudentFile] = useState<File | null>(null);
   const [hallFile, setHallFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const showStudents = uploadType === 'students' || uploadType === 'all';
+  const showHalls = uploadType === 'halls' || uploadType === 'all';
+
 
   const handleProcessFiles = async () => {
     if (!studentFile && !hallFile) {
@@ -42,11 +49,11 @@ export function DataUploadDialog({ open, onOpenChange, onDataUploaded }: DataUpl
     const dataToUpload: { students?: Student[], halls?: Hall[] } = {};
 
     try {
-      if (studentFile) {
+      if (studentFile && showStudents) {
         const students = await parseFile<Student>(studentFile, ['id', 'name', 'branch']);
         dataToUpload.students = students;
       }
-      if (hallFile) {
+      if (hallFile && showHalls) {
         const halls = await parseFile<Hall>(hallFile, ['id', 'name', 'capacity', 'rows', 'cols']);
         // Ensure numeric types are correct
         dataToUpload.halls = halls.map(h => ({
@@ -112,34 +119,72 @@ export function DataUploadDialog({ open, onOpenChange, onDataUploaded }: DataUpl
     });
   }
 
+  const downloadTemplate = (type: 'students' | 'halls') => {
+    const wb = XLSX.utils.book_new();
+    let data, filename;
+
+    if (type === 'students') {
+        data = [
+            { id: 'STU1001', name: 'John Doe', branch: 'CSE' }
+        ];
+        filename = 'student-template.xlsx';
+    } else {
+        data = [
+            { id: 'hall-1', name: 'Main Hall', capacity: 100, rows: 10, cols: 10 }
+        ];
+        filename = 'hall-template.xlsx';
+    }
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+    XLSX.writeFile(wb, filename);
+  };
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Upload Data</DialogTitle>
           <DialogDescription>
-            Upload Excel (.xlsx, .csv) files for student and hall data. Ensure columns match the required format.
+            Upload Excel (.xlsx, .csv) files. Ensure columns match the template format.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid w-full max-w-sm items-center gap-1.5">
-            <Label htmlFor="student-data">Student Data (id, name, branch)</Label>
-            <Input 
-              id="student-data" 
-              type="file" 
-              accept=".xlsx, .xls, .csv" 
-              onChange={(e) => setStudentFile(e.target.files?.[0] || null)}
-            />
-          </div>
-          <div className="grid w-full max-w-sm items-center gap-1.5">
-            <Label htmlFor="hall-data">Hall Data (id, name, capacity, rows, cols)</Label>
-            <Input 
-              id="hall-data" 
-              type="file" 
-              accept=".xlsx, .xls, .csv" 
-              onChange={(e) => setHallFile(e.target.files?.[0] || null)}
-            />
-          </div>
+          {showStudents && (
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="student-data">Student Data (id, name, branch)</Label>
+                <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => downloadTemplate('students')}>
+                  <Download className="mr-1 h-3 w-3" />
+                  Template
+                </Button>
+              </div>
+              <Input 
+                id="student-data" 
+                type="file" 
+                accept=".xlsx, .xls, .csv" 
+                onChange={(e) => setStudentFile(e.target.files?.[0] || null)}
+              />
+            </div>
+          )}
+          {showHalls && (
+            <div className="grid w-full max-w-sm items-center gap-1.5">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="hall-data">Hall Data (id, name, capacity, rows, cols)</Label>
+                <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => downloadTemplate('halls')}>
+                    <Download className="mr-1 h-3 w-3" />
+                    Template
+                </Button>
+              </div>
+              <Input 
+                id="hall-data" 
+                type="file" 
+                accept=".xlsx, .xls, .csv" 
+                onChange={(e) => setHallFile(e.target.files?.[0] || null)}
+              />
+            </div>
+          )}
         </div>
         <DialogFooter>
           <Button onClick={handleProcessFiles} disabled={isProcessing}>

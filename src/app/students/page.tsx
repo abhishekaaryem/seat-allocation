@@ -6,7 +6,7 @@ import { students as initialStudents } from '@/lib/placeholder-data';
 import { Upload } from 'lucide-react';
 import StudentsTable from '@/components/students-table';
 import { DataUploadDialog } from '@/components/data-upload-dialog';
-import type { Student, Hall } from '@/lib/types';
+import type { Student } from '@/lib/types';
 
 
 export default function StudentsPage() {
@@ -21,7 +21,7 @@ export default function StudentsPage() {
       >
         <Button onClick={() => setIsUploadOpen(true)}>
           <Upload className="mr-2 h-4 w-4" />
-          Upload Data
+          Upload Students
         </Button>
       </PageHeader>
 
@@ -30,6 +30,7 @@ export default function StudentsPage() {
       <DataUploadDialog 
         open={isUploadOpen} 
         onOpenChange={setIsUploadOpen} 
+        uploadType="students"
         onDataUploaded={({students, halls}) => {
             if (students) setStudents(students);
         }}
