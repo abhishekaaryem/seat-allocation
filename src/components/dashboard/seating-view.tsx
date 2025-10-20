@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Info, Loader2 } from 'lucide-react';
 import type { Hall, SeatingArrangement, AssignedSeat } from '@/lib/types';
 import SeatCard from './seat-card';
+import { cn } from '@/lib/utils';
+
 
 const BRANCH_COLORS = {
   CSE: 'hsl(210, 40%, 90%)',
@@ -30,11 +32,21 @@ export default function SeatingView({ halls, seatingArrangement: initialSeatingA
   }, [initialSeatingArrangement]);
 
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, seat: AssignedSeat) => {
+    e.dataTransfer.effectAllowed = 'move';
+    // Use a transparent image to hide the default drag preview
+    const img = new Image();
+    img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs=';
+    e.dataTransfer.setDragImage(img, 0, 0);
     setDraggedSeat(seat);
   };
 
+  const handleDragEnd = () => {
+    setDraggedSeat(null);
+  }
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>, targetSeatKey: string) => {
@@ -44,6 +56,12 @@ export default function SeatingView({ halls, seatingArrangement: initialSeatingA
     const [hallId, rowStr, colStr] = targetSeatKey.split('-');
     const targetRow = parseInt(rowStr, 10);
     const targetCol = parseInt(colStr, 10);
+    
+    // Prevent dropping on the same seat
+    if(draggedSeat.hallId === hallId && draggedSeat.row === targetRow && draggedSeat.col === targetCol) {
+        setDraggedSeat(null);
+        return;
+    }
 
     const newArrangement = [...seatingArrangement];
 
@@ -144,6 +162,11 @@ export default function SeatingView({ halls, seatingArrangement: initialSeatingA
                 key: `${hall.id}-${row}-${col}`,
                 assignedSeat: assignedSeat || null,
                 isConflict: conflicts.has(`${hall.id}-${row}-${col}`),
+                isBeingDragged: !!(draggedSeat &&
+                  draggedSeat.student.id === assignedSeat?.student.id &&
+                  draggedSeat.hallId === hall.id &&
+                  draggedSeat.row === row &&
+                  draggedSeat.col === col),
               };
             });
 
@@ -162,6 +185,7 @@ export default function SeatingView({ halls, seatingArrangement: initialSeatingA
                             key={seat.key}
                             draggable={!!seat.assignedSeat}
                             onDragStart={(e) => seat.assignedSeat && handleDragStart(e, seat.assignedSeat)}
+                            onDragEnd={handleDragEnd}
                             onDragOver={handleDragOver}
                             onDrop={(e) => handleDrop(e, seat.key)}
                           >
@@ -169,6 +193,7 @@ export default function SeatingView({ halls, seatingArrangement: initialSeatingA
                               student={seat.assignedSeat?.student || null}
                               isConflict={seat.isConflict}
                               branchColor={seat.assignedSeat?.student ? BRANCH_COLORS[seat.assignedSeat.student.branch] : ''}
+                              isBeingDragged={seat.isBeingDragged}
                             />
                           </div>
                         ))}

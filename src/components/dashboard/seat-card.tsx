@@ -8,9 +8,10 @@ type SeatCardProps = {
   student: Student | null;
   isConflict: boolean;
   branchColor: string;
+  isBeingDragged?: boolean;
 };
 
-export default function SeatCard({ student, isConflict, branchColor }: SeatCardProps) {
+export default function SeatCard({ student, isConflict, branchColor, isBeingDragged }: SeatCardProps) {
   if (!student) {
     return (
       <Card className="aspect-square bg-muted/50 border-dashed flex items-center justify-center">
@@ -27,6 +28,7 @@ export default function SeatCard({ student, isConflict, branchColor }: SeatCardP
             className={cn(
               "aspect-square flex flex-col items-center justify-center p-2 text-center transition-all duration-200 cursor-grab active:cursor-grabbing",
               isConflict ? "ring-2 ring-destructive ring-offset-2 ring-offset-background" : "ring-1 ring-transparent",
+              isBeingDragged && "opacity-30 scale-95"
             )}
             style={{ backgroundColor: isConflict ? "hsl(var(--destructive)/0.1)" : branchColor }}
           >
