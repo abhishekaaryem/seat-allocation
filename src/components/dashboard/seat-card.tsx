@@ -3,15 +3,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { Student } from "@/lib/types";
 import { AlertTriangle, User } from "lucide-react";
+import React from "react";
 
 type SeatCardProps = {
   student: Student | null;
   isConflict: boolean;
   branchColor: string;
   isBeingDragged?: boolean;
+  children?: React.ReactNode;
 };
 
-export default function SeatCard({ student, isConflict, branchColor, isBeingDragged }: SeatCardProps) {
+export default function SeatCard({ student, isConflict, branchColor, isBeingDragged, children }: SeatCardProps) {
   if (!student) {
     return (
       <Card className="aspect-square bg-muted/50 border-dashed flex items-center justify-center">
@@ -26,14 +28,15 @@ export default function SeatCard({ student, isConflict, branchColor, isBeingDrag
         <TooltipTrigger asChild>
           <Card
             className={cn(
-              "aspect-square flex flex-col items-center justify-center p-2 text-center transition-all duration-200 cursor-grab active:cursor-grabbing",
+              "aspect-square flex flex-col items-center justify-center p-2 text-center transition-all duration-200 cursor-grab active:cursor-grabbing relative",
               isConflict ? "ring-2 ring-destructive ring-offset-2 ring-offset-background" : "ring-1 ring-transparent",
               isBeingDragged && "opacity-30 scale-95"
             )}
             style={{ backgroundColor: isConflict ? "hsl(var(--destructive)/0.1)" : branchColor }}
           >
+            {children}
             <CardContent className="p-0 flex flex-col items-center justify-center gap-1">
-              {isConflict && <AlertTriangle className="w-4 h-4 text-destructive absolute top-1 right-1" />}
+              {isConflict && <AlertTriangle className="w-4 h-4 text-destructive" />}
               <p className="text-xs font-bold text-foreground truncate">{student.id}</p>
               <p className="text-[10px] font-medium text-foreground/80">{student.branch}</p>
             </CardContent>
