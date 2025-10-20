@@ -46,12 +46,15 @@ export default function ReportsPage() {
     const seatingArrangement = generateSeatingArrangement(students, halls);
 
     doc.text("Seating Chart Report", 14, 16);
+    let startY = 22;
 
     halls.forEach((hall, index) => {
       if (index > 0) {
         doc.addPage();
+        startY = 22; // Reset Y for new page
       }
-      doc.text(hall.name, 14, 16);
+      doc.setFontSize(12);
+      doc.text(hall.name, 14, startY);
 
       const hallArrangement = seatingArrangement.filter(seat => seat.hallId === hall.id);
       
@@ -66,7 +69,7 @@ export default function ReportsPage() {
       }
 
       doc.autoTable({
-        startY: 20,
+        startY: startY + 4,
         head: [Array.from({length: hall.cols}, (_, i) => `Col ${i+1}`)],
         body: body,
         theme: 'grid',
@@ -84,6 +87,9 @@ export default function ReportsPage() {
             }
         },
       });
+
+      // @ts-ignore
+      startY = doc.autoTable.previous.finalY + 10;
     });
 
     doc.save('seating-chart.pdf');
