@@ -12,8 +12,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { Student } from "@/lib/types";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
-export default function StudentsTable({ students }: { students: Student[] }) {
+type StudentsTableProps = {
+  students: Student[];
+  onEdit: (student: Student) => void;
+};
+
+export default function StudentsTable({ students, onEdit }: StudentsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -40,6 +47,7 @@ export default function StudentsTable({ students }: { students: Student[] }) {
               <TableHead>Student ID</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Branch</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -49,6 +57,26 @@ export default function StudentsTable({ students }: { students: Student[] }) {
                 <TableCell>{student.name}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">{student.branch}</Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => onEdit(student)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        <span>Edit</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive focus:text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        <span>Delete</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
@@ -71,7 +99,7 @@ export default function StudentsTable({ students }: { students: Student[] }) {
           variant="outline"
           size="sm"
           onClick={handleNext}
-          disabled={currentPage === totalPages}
+          disabled={currentPage === totalPages || totalPages === 0}
         >
           Next
         </Button>
