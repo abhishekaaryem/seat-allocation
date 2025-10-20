@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   SidebarProvider,
   Sidebar,
@@ -36,6 +36,7 @@ import {
   Moon,
   Sun,
 } from 'lucide-react';
+import { useAuth } from '@/contexts/auth-context';
 
 const menuItems = [
   { href: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -44,8 +45,12 @@ const menuItems = [
   { href: '/reports', label: 'Reports', icon: FileText },
 ];
 
+const publicPaths = ['/login', '/register'];
+
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout, isAuthenticated } = useAuth();
   const [theme, setTheme] = React.useState('light');
 
   React.useEffect(() => {
@@ -60,7 +65,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     localStorage.setItem('theme', newTheme);
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
+
+  if (!isAuthenticated && !publicPaths.includes(pathname)) {
+    // This case is primarily handled by AuthGuard, but it's a good fallback.
+    return null;
+  }
   
+  if (publicPaths.includes(pathname)) {
+    return <>{children}</>;
+  }
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -115,22 +134,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://i.pravatar.cc/150?u=admin" alt="@admin" />
-                    <AvatarFallback>AD</AvatarFallback>
+                    <AvatarImage src={`https://i.pravatar.cc/150?u=${user?.email}`} alt={user?.name || 'User'} />
+                    <AvatarFallback>{user?.name?.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Admin</p>
+                    <p className="text-sm font-medium leading-none">{user?.name}</p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      admin@seatingsage.com
+                      {user?.email}
                     </p>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>

@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AppLayout } from '@/components/app-layout';
 import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/contexts/auth-context';
+import { AuthGuard } from '@/components/auth-guard';
 
 export const metadata: Metadata = {
   title: 'SeatingSage',
@@ -28,7 +30,11 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body antialiased">
-        <AppLayout>{children}</AppLayout>
+        <AuthProvider>
+          <AuthGuard>
+            <AppLayout>{children}</AppLayout>
+          </AuthGuard>
+        </AuthProvider>
         <Toaster />
       </body>
     </html>
