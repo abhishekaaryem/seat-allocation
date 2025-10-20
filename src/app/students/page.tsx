@@ -6,11 +6,11 @@ import { students as initialStudents } from '@/lib/placeholder-data';
 import { Upload } from 'lucide-react';
 import StudentsTable from '@/components/students-table';
 import { DataUploadDialog } from '@/components/data-upload-dialog';
-import type { Student } from '@/lib/types';
+import type { Student, Hall } from '@/lib/types';
 
 
 export default function StudentsPage() {
-  const [students] = useState<Student[]>(initialStudents);
+  const [students, setStudents] = useState<Student[]>(initialStudents);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   return (
@@ -27,7 +27,13 @@ export default function StudentsPage() {
 
       <StudentsTable students={students} />
       
-      <DataUploadDialog open={isUploadOpen} onOpenChange={setIsUploadOpen} />
+      <DataUploadDialog 
+        open={isUploadOpen} 
+        onOpenChange={setIsUploadOpen} 
+        onDataUploaded={({students, halls}) => {
+            if (students) setStudents(students);
+        }}
+      />
     </div>
   );
 }
