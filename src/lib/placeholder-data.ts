@@ -10,12 +10,27 @@ const firstNames = ['Aarav', 'Vivaan', 'Aditya', 'Vihaan', 'Arjun', 'Sai', 'Reya
 const lastNames = ['Patel', 'Sharma', 'Singh', 'Kumar', 'Gupta', 'Verma', 'Yadav', 'Reddy', 'Mehta', 'Jain'];
 const branches: Array<Student['branch']> = ['CSE', 'ECE', 'ME', 'CE', 'EEE'];
 
-function createStudent(id: number): Student {
+// Simple pseudo-random number generator with a seed
+function seededRandom(seed: number) {
+    let state = seed;
+    return function() {
+        state = (state * 9301 + 49297) % 233280;
+        return state / 233280;
+    };
+}
+
+function createStudent(id: number, random: () => number): Student {
     return {
         id: `STU${1000 + id}`,
-        name: `${firstNames[Math.floor(Math.random() * firstNames.length)]} ${lastNames[Math.floor(Math.random() * lastNames.length)]}`,
+        name: `${firstNames[Math.floor(random() * firstNames.length)]} ${lastNames[Math.floor(random() * lastNames.length)]}`,
         branch: branches[id % branches.length],
     };
 }
 
-export const students: Student[] = Array.from({ length: 50 }, (_, i) => createStudent(i + 1));
+function generateStudents(): Student[] {
+    const random = seededRandom(123); // Using a fixed seed
+    return Array.from({ length: 50 }, (_, i) => createStudent(i + 1, random));
+}
+
+
+export const students: Student[] = generateStudents();
