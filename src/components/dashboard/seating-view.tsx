@@ -187,6 +187,7 @@ export default function SeatingView({ halls, seatingArrangement, onArrangementUp
                 key: `${hall.id}-${row}-${col}`,
                 row: row,
                 col: col,
+                seatIndex: i,
                 assignedSeat: assignedSeat || null,
                 isConflict: conflicts.has(`${hall.id}-${row}-${col}`),
                 isBeingDragged: getIsBeingDragged(assignedSeat),
@@ -219,7 +220,7 @@ export default function SeatingView({ halls, seatingArrangement, onArrangementUp
                           >
                             <SeatCard
                               student={seatInfo.assignedSeat?.student || null}
-                              seatNumber={`R${seatInfo.row + 1}-C${seatInfo.col + 1}`}
+                              seatNumber={`${seatInfo.seatIndex + 1}`}
                               isConflict={seatInfo.isConflict}
                               branchColor={seatInfo.assignedSeat?.student ? BRANCH_COLORS[seatInfo.assignedSeat.student.branch] : ''}
                               isBeingDragged={seatInfo.isBeingDragged}

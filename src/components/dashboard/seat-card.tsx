@@ -56,7 +56,7 @@ export default function SeatCard({ student, seatNumber, isConflict, branchColor,
         </TooltipTrigger>
         <TooltipContent>
           <p className="font-semibold">{student.name}</p>
-          <p>Seat: {seatNumber}</p>
+          <p>Seat Number: {seatNumber}</p>
           <p>Branch: {student.branch}</p>
           <p>Student ID: {student.id}</p>
         </TooltipContent>
