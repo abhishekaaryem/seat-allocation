@@ -16,23 +16,27 @@ declare module 'jspdf' {
   }
 }
 
+// Consistent seating arrangement generation
 function generateSeatingArrangement(students: Student[], halls: Hall[]): SeatingArrangement {
-  const shuffledStudents = [...students].sort(() => Math.random() - 0.5);
+  // Sort students and halls for consistency
+  const sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id));
+  const sortedHalls = [...halls].sort((a, b) => a.id.localeCompare(b.id));
+  
   const arrangement: SeatingArrangement = [];
   let studentIndex = 0;
 
-  for (const hall of halls) {
-    if (studentIndex >= shuffledStudents.length) break;
+  for (const hall of sortedHalls) {
+    if (studentIndex >= sortedStudents.length) break;
 
     const seatsInHall = hall.rows * hall.cols;
     for (let i = 0; i < seatsInHall; i++) {
-      if (studentIndex >= shuffledStudents.length) break;
+      if (studentIndex >= sortedStudents.length) break;
 
       arrangement.push({
         hallId: hall.id,
         row: Math.floor(i / hall.cols),
         col: i % hall.cols,
-        student: shuffledStudents[studentIndex],
+        student: sortedStudents[studentIndex],
       });
       studentIndex++;
     }
@@ -45,16 +49,16 @@ export default function ReportsPage() {
     const doc = new jsPDF();
     const seatingArrangement = generateSeatingArrangement(students, halls);
 
-    doc.text("Seating Chart Report", 14, 16);
-    let startY = 22;
-
     halls.forEach((hall, index) => {
       if (index > 0) {
         doc.addPage();
-        startY = 22; // Reset Y for new page
       }
-      doc.setFontSize(12);
+      doc.text("Seating Chart Report", 14, 16);
+      let startY = 22;
+
+      doc.setFontSize(14);
       doc.text(hall.name, 14, startY);
+      startY += 6;
 
       const hallArrangement = seatingArrangement.filter(seat => seat.hallId === hall.id);
       
@@ -62,14 +66,21 @@ export default function ReportsPage() {
       for (let r = 0; r < hall.rows; r++) {
         const row: string[] = [];
         for (let c = 0; c < hall.cols; c++) {
+          const seatIndex = r * hall.cols + c;
+          const seatNumber = seatIndex + 1;
           const seat = hallArrangement.find(s => s.row === r && s.col === c);
-          row.push(seat ? `${seat.student.id}\n(${seat.student.branch})` : 'Empty');
+          
+          if (seat) {
+            row.push(`${seatNumber}\n${seat.student.name}\n(${seat.student.branch})`);
+          } else {
+            row.push(`${seatNumber}\n(Empty)`);
+          }
         }
         body.push(row);
       }
 
       doc.autoTable({
-        startY: startY + 4,
+        startY: startY,
         head: [Array.from({length: hall.cols}, (_, i) => `Col ${i+1}`)],
         body: body,
         theme: 'grid',
@@ -87,9 +98,6 @@ export default function ReportsPage() {
             }
         },
       });
-
-      // @ts-ignore
-      startY = doc.autoTable.previous.finalY + 10;
     });
 
     doc.save('seating-chart.pdf');
