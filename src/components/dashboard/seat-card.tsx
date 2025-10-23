@@ -47,13 +47,13 @@ export default function SeatCard({ student, seatNumber, isConflict, branchColor,
             style={{ backgroundColor: isConflict ? "hsl(var(--destructive)/0.1)" : branchColor }}
           >
             {children}
-            <CardContent className="p-0 flex flex-col items-center justify-center gap-1">
-              <div className="relative w-full px-2">
+            <CardContent className="p-0 flex flex-col items-center justify-center gap-1 w-full min-h-0">
+              <div className="relative w-full px-1 flex-1 flex flex-col justify-center items-center">
                 {isConflict && <AlertTriangle className="absolute -top-1 left-1/2 -translate-x-1/2 w-4 h-4 text-destructive" />}
-                <p className="text-sm font-bold text-foreground truncate">{student.name}</p>
+                <p className="text-sm font-bold text-foreground break-words leading-tight">{student.name}</p>
               </div>
               <p className="text-[11px] text-foreground/80">{student.branch}</p>
-              <p className="text-xs font-medium text-foreground/60 mt-1">{seatNumber}</p>
+              <p className="text-xs font-medium text-foreground/60">{seatNumber}</p>
             </CardContent>
           </Card>
         </TooltipTrigger>
