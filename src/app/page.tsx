@@ -9,35 +9,9 @@ import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
-
-// Consistent seating arrangement generation
-function generateSeatingArrangement(students: Student[], halls: Hall[]): SeatingArrangement {
-  if (!students || !halls) return [];
-  // Sort students and halls for consistency
-  const sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id));
-  const sortedHalls = [...halls].sort((a, b) => a.id.localeCompare(b.id));
-  
-  const arrangement: SeatingArrangement = [];
-  let studentIndex = 0;
-
-  for (const hall of sortedHalls) {
-    if (studentIndex >= sortedStudents.length) break;
-
-    const seatsInHall = hall.rows * hall.cols;
-    for (let i = 0; i < seatsInHall; i++) {
-      if (studentIndex >= sortedStudents.length) break;
-
-      arrangement.push({
-        hallId: hall.id,
-        row: Math.floor(i / hall.cols),
-        col: i % hall.cols,
-        student: sortedStudents[studentIndex],
-      });
-      studentIndex++;
-    }
-  }
-  return arrangement;
-}
+import { generateSeatingArrangement } from '@/lib/seating-algorithm';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
 
 export default function DashboardPage() {
   const firestore = useFirestore();
@@ -51,12 +25,16 @@ export default function DashboardPage() {
   
   const isLoading = hallsLoading || studentsLoading;
 
-  useEffect(() => {
+  const handleGenerateArrangement = useCallback(() => {
     if (halls && students) {
-        const newArrangement = generateSeatingArrangement(students, halls);
-        setSeatingArrangement(newArrangement);
+      const newArrangement = generateSeatingArrangement(students, halls);
+      setSeatingArrangement(newArrangement);
     }
   }, [students, halls]);
+
+  useEffect(() => {
+    handleGenerateArrangement();
+  }, [handleGenerateArrangement]);
   
   const handleUpdateArrangement = useCallback((newArrangement: SeatingArrangement) => {
     setSeatingArrangement(newArrangement);
@@ -70,7 +48,12 @@ export default function DashboardPage() {
       <PageHeader
         title="Dashboard"
         description="Overview of the seating allocation. Drag and drop to make adjustments."
-      />
+      >
+        <Button onClick={handleGenerateArrangement} disabled={isLoading}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Regenerate Plan
+        </Button>
+      </PageHeader>
       
       {totalStudents > totalSeats && (
         <Alert variant="destructive">

@@ -10,40 +10,13 @@ import type { RowInput } from 'jspdf-autotable';
 import type { Hall, SeatingArrangement, Student } from '@/lib/types';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
+import { generateSeatingArrangement } from '@/lib/seating-algorithm';
+
 
 declare module 'jspdf' {
   interface jsPDF {
     autoTable: (options: any) => jsPDF;
   }
-}
-
-// Consistent seating arrangement generation
-function generateSeatingArrangement(students: Student[], halls: Hall[]): SeatingArrangement {
-  if (!students || !halls) return [];
-  // Sort students and halls for consistency
-  const sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id));
-  const sortedHalls = [...halls].sort((a, b) => a.id.localeCompare(b.id));
-  
-  const arrangement: SeatingArrangement = [];
-  let studentIndex = 0;
-
-  for (const hall of sortedHalls) {
-    if (studentIndex >= sortedStudents.length) break;
-
-    const seatsInHall = hall.rows * hall.cols;
-    for (let i = 0; i < seatsInHall; i++) {
-      if (studentIndex >= sortedStudents.length) break;
-
-      arrangement.push({
-        hallId: hall.id,
-        row: Math.floor(i / hall.cols),
-        col: i % hall.cols,
-        student: sortedStudents[studentIndex],
-      });
-      studentIndex++;
-    }
-  }
-  return arrangement;
 }
 
 export default function ReportsPage() {
@@ -75,17 +48,17 @@ export default function ReportsPage() {
       const hallArrangement = seatingArrangement.filter(seat => seat.hallId === hall.id);
       
       const body: RowInput[] = [];
+      let seatCounter = 0;
       for (let r = 0; r < hall.rows; r++) {
         const row: string[] = [];
         for (let c = 0; c < hall.cols; c++) {
-          const seatIndex = r * hall.cols + c;
-          const seatNumber = seatIndex + 1;
+          seatCounter++;
           const seat = hallArrangement.find(s => s.row === r && s.col === c);
           
           if (seat) {
-            row.push(`${seatNumber}\n${seat.student.name}\n(${seat.student.branch})`);
+            row.push(`${seatCounter}\n${seat.student.name}\n(${seat.student.branch})`);
           } else {
-            row.push(`${seatNumber}\n(Empty)`);
+            row.push(`${seatCounter}\n(Empty)`);
           }
         }
         body.push(row);
