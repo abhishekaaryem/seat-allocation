@@ -1,104 +1,69 @@
 /**
- * @fileOverview
- * This ruleset enforces a role-based access control model with a focus on authorization independence.
+ * @fileoverview Firestore Security Rules for the application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a role-based access control model for Halls and Students.
+ * Authenticated users have write access to the halls and students collections.
  *
  * Data Structure:
  * - /halls/{hallId}: Stores hall information.
- * - /exams/{examId}: Stores exam information.
- * - /hall_allocations/{hallAllocationId}: Stores hall allocation data and includes denormalized member information for authorization.
  * - /students/{studentId}: Stores student information.
  *
  * Key Security Decisions:
- * - Halls and exams are assumed to be managed by admins (no owner checks).
- * - Hall allocations use a denormalized `members` map to control access.
- * - Student data has no specified ownership, defaulting to no write access.
+ * - Authenticated users can create, update, and delete halls and students.
+ * - Data shape is not strictly enforced in this prototyping phase.
  *
  * Denormalization for Authorization:
- * - The `hall_allocations` collection includes a `members` map, enabling role-based access control without requiring `get()` calls to other collections.
- *   Example: `{ members: { 'user_abc': 'admin' } }` grants admin rights to user_abc.
+ * Not applicable in this simple role-based access control.
  *
  * Structural Segregation:
- * - Public and private data are stored in separate collections.
+ * Not applicable. All data is stored in top-level collections.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to hall documents.  Currently allows public read access and restricts writes.
+     * @description Grants authenticated users full access to hall documents.
      * @path /halls/{hallId}
-     * @allow get, list: if true;
-     * @allow create, update, delete: if false;
-     * @deny create: if false;
-     * @deny update: if false;
-     * @deny delete: if false;
-     * @principle Allows read by anyone, but restricts writes.
+     * @allow (create) User with valid auth can create a new hall.
+     * @allow (get) Any authenticated user can read a hall.
+     * @allow (update) Any authenticated user can update a hall.
+     * @allow (delete) Any authenticated user can delete a hall.
+     * @deny (create) Unauthenticated user cannot create a hall.
+     * @deny (create) Creating a hall with invalid data will be blocked by schema validation. (Not implemented)
+     * @principle Allows authenticated users to manage hall data.
      */
     match /halls/{hallId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
-    }
-
-    /**
-     * @description Controls access to exam documents. Currently allows public read access and restricts writes.
-     * @path /exams/{examId}
-     * @allow get, list: if true;
-     * @allow create, update, delete: if false;
-     * @deny create: if false;
-     * @deny update: if false;
-     * @deny delete: if false;
-     * @principle Allows read by anyone, but restricts writes.
-     */
-    match /exams/{examId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
-    }
-
-    /**
-     * @description Controls access to hall allocation documents using a membership map.
-     * @path /hall_allocations/{hallAllocationId}
-     * @allow get: if isSignedIn() && resource.data.members[request.auth.uid] != null;
-     * @allow list: if isSignedIn();
-     * @allow create: if isSignedIn();
-     * @allow update: if isSignedIn() && getHallAllocationAdmin();
-     * @allow delete: if isSignedIn() && getHallAllocationAdmin();
-     * @deny get: if false;
-     * @deny list: if false;
-     * @deny create: if false;
-     * @deny update: if false;
-     * @deny delete: if false;
-     * @principle Grants access based on membership in the 'members' map and restricts updates/deletes to admins.
-     */
-    match /hall_allocations/{hallAllocationId} {
-      allow get: if isSignedIn() && resource.data.members[request.auth.uid] != null;
+      allow get: if isSignedIn();
       allow list: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && getHallAllocationAdmin();
-      allow delete: if isSignedIn() && getHallAllocationAdmin();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     /**
-     * @description Controls access to student documents. Read only and does not allow creating, updating, or deleting.
+     * @description Grants authenticated users full access to student documents.
      * @path /students/{studentId}
-     * @allow get, list: if true;
-     * @allow create, update, delete: if false;
-     * @deny create: if false;
-     * @deny update: if false;
-     * @deny delete: if false;
-     * @principle Allows read by anyone, but restricts writes.
+     * @allow (create) User with valid auth can create a new student.
+     * @allow (get) Any authenticated user can read a student.
+     * @allow (update) Any authenticated user can update a student.
+     * @allow (delete) Any authenticated user can delete a student.
+     * @deny (create) Unauthenticated user cannot create a student.
+     * @deny (create) Creating a student with invalid data will be blocked by schema validation. (Not implemented)
+     * @principle Allows authenticated users to manage student data.
      */
     match /students/{studentId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if isSignedIn();
     }
 
-    // Helper Functions
+    // Helper function to determine if a user is signed in.
     function isSignedIn() {
       return request.auth != null;
-    }
-
-    function getHallAllocationAdmin() {
-      return resource.data.members[request.auth.uid] == 'admin';
     }
   }
 }
