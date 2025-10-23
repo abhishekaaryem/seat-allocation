@@ -51,9 +51,9 @@ export default function HallsPage() {
         if (!firestore || !uploadedHalls) return;
 
         const hallsCollection = collection(firestore, 'halls');
-        const promises = uploadedHalls.map(hall => {
+        uploadedHalls.forEach(hall => {
             const hallRef = doc(hallsCollection, hall.id);
-            return setDocumentNonBlocking(hallRef, hall, { merge: true });
+            setDocumentNonBlocking(hallRef, hall, { merge: true });
         });
         
         toast({ title: "Success", description: "Hall data is being uploaded." });
