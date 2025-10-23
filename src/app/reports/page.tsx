@@ -128,15 +128,17 @@ export default function ReportsPage() {
         }
         doc.text(`Attendance Sheet - ${hall.name}`, 14, 16);
 
-        const hallStudents = seatingArrangement
+        const hallSeats = seatingArrangement
             .filter(seat => seat.hallId === hall.id)
-            .sort((a, b) => a.student.id.localeCompare(b.student.id))
-            .map(seat => seat.student);
+            .sort((a, b) => a.student.id.localeCompare(b.student.id));
 
         doc.autoTable({
             startY: 20,
-            head: [['Student ID', 'Name', 'Branch', 'Signature']],
-            body: hallStudents.map(student => [student.id, student.name, student.branch, '']),
+            head: [['Seat No.', 'Student ID', 'Name', 'Branch', 'Signature']],
+            body: hallSeats.map(seat => {
+              const seatNumber = seat.row * hall.cols + seat.col + 1;
+              return [seatNumber, seat.student.id, seat.student.name, seat.student.branch, ''];
+            }),
             theme: 'striped',
             styles: {
                 fontSize: 10,
@@ -145,7 +147,7 @@ export default function ReportsPage() {
                 fillColor: [41, 128, 185]
             },
             columnStyles: {
-                3: {
+                4: {
                     cellWidth: 40
                 }
             }
