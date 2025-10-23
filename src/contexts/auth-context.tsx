@@ -67,6 +67,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
         console.error("Registration error", error);
         if (error instanceof Error) {
+            if (error.message.includes('auth/email-already-in-use')) {
+                throw new Error('This email address is already in use. Please try another.');
+            }
             throw new Error(error.message);
         }
         throw new Error("An unknown error occurred during registration.");
