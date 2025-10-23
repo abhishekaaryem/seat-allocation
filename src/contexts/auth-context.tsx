@@ -43,10 +43,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, pass: string): Promise<void> => {
     try {
-        initiateEmailSignIn(auth, email, pass);
+        await initiateEmailSignIn(auth, email, pass);
     } catch (error) {
         console.error("Login error", error);
         if (error instanceof Error) {
+            // Firebase often throws errors with a user-friendly message.
+            if (error.message.includes('auth/invalid-credential')) {
+                throw new Error('Invalid email or password. Please try again.');
+            }
             throw new Error(error.message);
         }
         throw new Error("An unknown error occurred during login.");
@@ -55,23 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (name: string, email: string, pass: string): Promise<void> => {
     try {
-        // We can't use the non-blocking version here easily because we need the user credential to update the profile.
-        await initiateEmailSignUp(auth, email, pass);
-        
-        // This part runs after the user is created and signed in.
-        // A listener for onAuthStateChanged will eventually catch the new user state.
-        const unsubscribe = auth.onAuthStateChanged(async (user) => {
-            if (user) {
-                unsubscribe(); // Stop listening to prevent multiple updates
-                try {
-                    await updateProfile(user, { displayName: name });
-                } catch (profileError) {
-                    console.error("Error updating profile:", profileError);
-                    // Decide how to handle this - maybe the user has to set their name later.
-                }
-            }
-        });
-        
+        const userCredential = await initiateEmailSignUp(auth, email, pass);
+        // After user is created, update their profile with the name
+        if (userCredential.user) {
+            await updateProfile(userCredential.user, { displayName: name });
+        }
     } catch (error) {
         console.error("Registration error", error);
         if (error instanceof Error) {
