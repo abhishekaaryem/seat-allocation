@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical, Trash2 } from 'lucide-react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 const BRANCH_COLORS = {
   CSE: 'hsl(210, 40%, 90%)',
@@ -144,13 +145,13 @@ export default function SeatingView({ halls, seatingArrangement, onArrangementUp
     );
   }
 
-  if (!seatingArrangement) {
+  if (!seatingArrangement || halls.length === 0) {
     return (
         <Card className="min-h-[400px] flex flex-col items-center justify-center text-center">
             <Info className="h-12 w-12 text-muted-foreground"/>
             <h3 className="text-xl font-semibold mt-4">No Arrangement Available</h3>
             <p className="text-muted-foreground mt-1">
-                The seating arrangement could not be generated.
+                There are no halls or students to generate a seating arrangement.
             </p>
         </Card>
     );
@@ -168,13 +169,16 @@ export default function SeatingView({ halls, seatingArrangement, onArrangementUp
       </CardHeader>
       <CardContent>
         <Tabs defaultValue={halls[0]?.id || ''}>
-          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-3">
-            {halls.map((hall) => (
-              <TabsTrigger key={hall.id} value={hall.id}>
-                {hall.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          <ScrollArea className="w-full whitespace-nowrap">
+            <TabsList>
+              {halls.map((hall) => (
+                <TabsTrigger key={hall.id} value={hall.id}>
+                  {hall.name}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <ScrollBar orientation="horizontal" />
+          </ScrollArea>
 
           {halls.map((hall) => {
             const seatsInHall = Array.from({ length: hall.rows * hall.cols }, (_, i) => {
@@ -195,13 +199,13 @@ export default function SeatingView({ halls, seatingArrangement, onArrangementUp
             });
 
             return (
-              <TabsContent key={hall.id} value={hall.id}>
+              <TabsContent key={hall.id} value={hall.id} className="pt-4">
                 <div className="overflow-x-auto">
                     <div
-                        className="grid gap-2 p-1"
+                        className="grid gap-4 p-1"
                         style={{
-                            gridTemplateColumns: `repeat(${hall.cols}, minmax(80px, 1fr))`,
-                            width: `${hall.cols * 88}px`,
+                            gridTemplateColumns: `repeat(${hall.cols}, minmax(90px, 1fr))`,
+                            width: `${hall.cols * 106}px`,
                         }}
                     >
                         {seatsInHall.map((seatInfo) => (
