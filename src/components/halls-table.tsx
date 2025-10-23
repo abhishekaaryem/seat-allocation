@@ -21,10 +21,11 @@ import type { Hall } from "@/lib/types";
 type HallsTableProps = {
   halls: Hall[];
   onEdit: (hall: Hall) => void;
+  onDelete: (hall: Hall) => void;
   isLoading: boolean;
 };
 
-export default function HallsTable({ halls, onEdit, isLoading }: HallsTableProps) {
+export default function HallsTable({ halls, onEdit, onDelete, isLoading }: HallsTableProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-40">
@@ -62,7 +63,7 @@ export default function HallsTable({ halls, onEdit, isLoading }: HallsTableProps
                       <Pencil className="mr-2 h-4 w-4" />
                       <span>Edit</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive focus:text-destructive">
+                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onDelete(hall)}>
                       <Trash2 className="mr-2 h-4 w-4" />
                       <span>Delete</span>
                     </DropdownMenuItem>

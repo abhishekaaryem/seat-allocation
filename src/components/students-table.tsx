@@ -18,10 +18,11 @@ import { MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
 type StudentsTableProps = {
   students: Student[];
   onEdit: (student: Student) => void;
+  onDelete: (student: Student) => void;
   isLoading: boolean;
 };
 
-export default function StudentsTable({ students, onEdit, isLoading }: StudentsTableProps) {
+export default function StudentsTable({ students, onEdit, onDelete, isLoading }: StudentsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -80,7 +81,7 @@ export default function StudentsTable({ students, onEdit, isLoading }: StudentsT
                         <Pencil className="mr-2 h-4 w-4" />
                         <span>Edit</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive focus:text-destructive">
+                      <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onDelete(student)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         <span>Delete</span>
                       </DropdownMenuItem>

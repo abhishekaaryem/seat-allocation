@@ -8,9 +8,18 @@ import { DataUploadDialog } from '@/components/data-upload-dialog';
 import type { Student } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { StudentFormDialog } from '@/components/student-form-dialog';
-import { useCollection, useFirestore, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function StudentsPage() {
   const firestore = useFirestore();
@@ -20,6 +29,7 @@ export default function StudentsPage() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+  const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
   const { toast } = useToast();
 
   const handleOpenForm = (student: Student | null = null) => {
@@ -47,6 +57,16 @@ export default function StudentsPage() {
         toast({ title: "Student Added", description: `${studentData.name} has been added successfully.` });
     }
     handleCloseForm();
+  };
+
+  const handleDeleteStudent = () => {
+    if (!firestore || !studentToDelete) return;
+
+    const studentRef = doc(firestore, 'students', studentToDelete.id);
+    deleteDocumentNonBlocking(studentRef);
+    
+    toast({ title: "Student Deleted", description: `${studentToDelete.name} has been deleted.` });
+    setStudentToDelete(null);
   };
 
   const handleDataUploaded = ({ students: uploadedStudents }: { students?: Student[] }) => {
@@ -80,7 +100,7 @@ export default function StudentsPage() {
         </div>
       </PageHeader>
 
-      <StudentsTable students={students || []} onEdit={handleOpenForm} isLoading={studentsLoading} />
+      <StudentsTable students={students || []} onEdit={handleOpenForm} onDelete={setStudentToDelete} isLoading={studentsLoading} />
       
       <DataUploadDialog 
         open={isUploadOpen} 
@@ -94,6 +114,21 @@ export default function StudentsPage() {
         student={selectedStudent}
         onSave={handleSaveStudent}
       />
+      <AlertDialog open={!!studentToDelete} onOpenChange={() => setStudentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the student
+              "{studentToDelete?.name}" and remove their data from all records.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setStudentToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteStudent}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

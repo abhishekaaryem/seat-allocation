@@ -8,8 +8,18 @@ import { HallFormDialog } from '@/components/hall-form-dialog';
 import { DataUploadDialog } from '@/components/data-upload-dialog';
 import type { Hall } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function HallsPage() {
     const firestore = useFirestore();
@@ -19,6 +29,7 @@ export default function HallsPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [selectedHall, setSelectedHall] = useState<Hall | null>(null);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [hallToDelete, setHallToDelete] = useState<Hall | null>(null);
     const { toast } = useToast();
 
     const handleOpenForm = (hall: Hall | null = null) => {
@@ -45,6 +56,16 @@ export default function HallsPage() {
             toast({ title: "Hall Added", description: `${hallData.name} has been added successfully.` });
         }
         handleCloseForm();
+    };
+
+    const handleDeleteHall = () => {
+        if (!firestore || !hallToDelete) return;
+
+        const hallRef = doc(firestore, 'halls', hallToDelete.id);
+        deleteDocumentNonBlocking(hallRef);
+        
+        toast({ title: "Hall Deleted", description: `${hallToDelete.name} has been deleted.` });
+        setHallToDelete(null);
     };
 
     const handleDataUploaded = ({ halls: uploadedHalls }: { halls?: Hall[] }) => {
@@ -76,7 +97,12 @@ export default function HallsPage() {
             </Button>
         </div>
       </PageHeader>
-      <HallsTable halls={halls || []} onEdit={handleOpenForm} isLoading={hallsLoading} />
+      <HallsTable 
+        halls={halls || []} 
+        onEdit={handleOpenForm} 
+        onDelete={setHallToDelete}
+        isLoading={hallsLoading} 
+      />
       <HallFormDialog 
         open={isFormOpen} 
         onOpenChange={handleCloseForm} 
@@ -89,6 +115,21 @@ export default function HallsPage() {
         uploadType="halls"
         onDataUploaded={handleDataUploaded}
       />
+       <AlertDialog open={!!hallToDelete} onOpenChange={() => setHallToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the hall
+              "{hallToDelete?.name}" and remove all associated seating data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setHallToDelete(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteHall}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
