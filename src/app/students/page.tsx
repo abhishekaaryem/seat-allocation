@@ -2,17 +2,21 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
-import { students as initialStudents } from '@/lib/placeholder-data';
 import { PlusCircle, Upload } from 'lucide-react';
 import StudentsTable from '@/components/students-table';
 import { DataUploadDialog } from '@/components/data-upload-dialog';
 import type { Student } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { StudentFormDialog } from '@/components/student-form-dialog';
+import { useCollection, useFirestore, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 
 export default function StudentsPage() {
-  const [students, setStudents] = useState<Student[]>(initialStudents);
+  const firestore = useFirestore();
+  const studentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'students') : null, [firestore]);
+  const { data: students, isLoading: studentsLoading } = useCollection<Student>(studentsQuery);
+
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -29,21 +33,34 @@ export default function StudentsPage() {
   };
 
   const handleSaveStudent = (studentData: Omit<Student, 'id'> & { id?: string }) => {
-    if (studentData.id) {
-        // Editing existing student
-        setStudents(students.map(s => s.id === studentData.id ? { ...s, ...studentData } as Student : s));
+    if (!firestore) return;
+    
+    if (studentData.id && selectedStudent) { // Editing
+        const studentRef = doc(firestore, 'students', selectedStudent.id);
+        const { id, ...dataToUpdate } = studentData;
+        setDocumentNonBlocking(studentRef, dataToUpdate, { merge: true });
         toast({ title: "Student Updated", description: `${studentData.name} has been updated successfully.` });
-    } else {
-        // Adding new student
-        const newStudent: Student = {
-            ...studentData,
-            id: `STU${Date.now()}` // Simple unique ID generation
-        };
-        setStudents([...students, newStudent]);
-        toast({ title: "Student Added", description: `${newStudent.name} has been added successfully.` });
+    } else if (studentData.id) { // Adding with specific ID
+        const studentRef = doc(firestore, 'students', studentData.id);
+        const { id, ...dataToAdd } = studentData;
+        setDocumentNonBlocking(studentRef, dataToAdd, {});
+        toast({ title: "Student Added", description: `${studentData.name} has been added successfully.` });
     }
     handleCloseForm();
   };
+
+  const handleDataUploaded = ({ students: uploadedStudents }: { students?: Student[] }) => {
+    if (!firestore || !uploadedStudents) return;
+
+    const studentsCollection = collection(firestore, 'students');
+    uploadedStudents.forEach(student => {
+        const studentRef = doc(studentsCollection, student.id);
+        setDocumentNonBlocking(studentRef, student, { merge: true });
+    });
+    
+    toast({ title: "Success", description: "Student data is being uploaded." });
+  };
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -63,18 +80,13 @@ export default function StudentsPage() {
         </div>
       </PageHeader>
 
-      <StudentsTable students={students} onEdit={handleOpenForm} />
+      <StudentsTable students={students || []} onEdit={handleOpenForm} isLoading={studentsLoading} />
       
       <DataUploadDialog 
         open={isUploadOpen} 
         onOpenChange={setIsUploadOpen} 
         uploadType="students"
-        onDataUploaded={({students: uploadedStudents}) => {
-            if (uploadedStudents) {
-              setStudents(uploadedStudents);
-              toast({ title: "Success", description: "Student data has been uploaded." });
-            }
-        }}
+        onDataUploaded={handleDataUploaded}
       />
       <StudentFormDialog
         open={isFormOpen}

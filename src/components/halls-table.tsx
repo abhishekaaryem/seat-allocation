@@ -9,7 +9,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,9 +21,17 @@ import type { Hall } from "@/lib/types";
 type HallsTableProps = {
   halls: Hall[];
   onEdit: (hall: Hall) => void;
+  isLoading: boolean;
 };
 
-export default function HallsTable({ halls, onEdit }: HallsTableProps) {
+export default function HallsTable({ halls, onEdit, isLoading }: HallsTableProps) {
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
   return (
     <div className="rounded-lg border">
       <Table>

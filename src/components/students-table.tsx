@@ -10,25 +10,26 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { Student } from "@/lib/types";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
 
 type StudentsTableProps = {
   students: Student[];
   onEdit: (student: Student) => void;
+  isLoading: boolean;
 };
 
-export default function StudentsTable({ students, onEdit }: StudentsTableProps) {
+export default function StudentsTable({ students, onEdit, isLoading }: StudentsTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const totalPages = Math.ceil(students.length / itemsPerPage);
-  const paginatedStudents = students.slice(
+  const totalPages = useMemo(() => Math.ceil(students.length / itemsPerPage), [students.length]);
+  const paginatedStudents = useMemo(() => students.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
-  );
+  ), [students, currentPage]);
 
   const handlePrevious = () => {
     setCurrentPage((prev) => Math.max(prev - 1, 1));
@@ -37,6 +38,14 @@ export default function StudentsTable({ students, onEdit }: StudentsTableProps) 
   const handleNext = () => {
     setCurrentPage((prev) => Math.min(prev + 1, totalPages));
   };
+  
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-40">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -93,7 +102,7 @@ export default function StudentsTable({ students, onEdit }: StudentsTableProps) 
           Previous
         </Button>
         <span className="text-sm text-muted-foreground">
-          Page {currentPage} of {totalPages}
+          Page {currentPage} of {totalPages || 1}
         </span>
         <Button
           variant="outline"

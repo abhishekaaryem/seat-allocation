@@ -7,8 +7,9 @@ import { FileText, ClipboardCheck, Download } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import type { RowInput } from 'jspdf-autotable';
-import { halls, students } from '@/lib/placeholder-data';
 import type { Hall, SeatingArrangement, Student } from '@/lib/types';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 declare module 'jspdf' {
   interface jsPDF {
@@ -18,6 +19,7 @@ declare module 'jspdf' {
 
 // Consistent seating arrangement generation
 function generateSeatingArrangement(students: Student[], halls: Hall[]): SeatingArrangement {
+  if (!students || !halls) return [];
   // Sort students and halls for consistency
   const sortedStudents = [...students].sort((a, b) => a.id.localeCompare(b.id));
   const sortedHalls = [...halls].sort((a, b) => a.id.localeCompare(b.id));
@@ -45,7 +47,15 @@ function generateSeatingArrangement(students: Student[], halls: Hall[]): Seating
 }
 
 export default function ReportsPage() {
+  const firestore = useFirestore();
+  const hallsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'halls') : null, [firestore]);
+  const studentsQuery = useMemoFirebase(() => firestore ? collection(firestore, 'students') : null, [firestore]);
+
+  const { data: halls } = useCollection<Hall>(hallsQuery);
+  const { data: students } = useCollection<Student>(studentsQuery);
+
   const handleDownloadSeatingChart = () => {
+    if (!students || !halls) return;
     const doc = new jsPDF();
     const seatingArrangement = generateSeatingArrangement(students, halls);
 
@@ -53,12 +63,14 @@ export default function ReportsPage() {
       if (index > 0) {
         doc.addPage();
       }
+      doc.setFontSize(16);
       doc.text("Seating Chart Report", 14, 16);
+      
       let startY = 22;
 
       doc.setFontSize(14);
-      doc.text(hall.name, 14, startY);
-      startY += 6;
+      doc.text(hall.name, 14, startY + 6);
+      startY += 12;
 
       const hallArrangement = seatingArrangement.filter(seat => seat.hallId === hall.id);
       
@@ -104,6 +116,7 @@ export default function ReportsPage() {
   };
 
   const handleDownloadAttendanceSheets = () => {
+    if (!students || !halls) return;
     const doc = new jsPDF();
     const seatingArrangement = generateSeatingArrangement(students, halls);
     
@@ -160,7 +173,7 @@ export default function ReportsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={handleDownloadSeatingChart}>
+            <Button onClick={handleDownloadSeatingChart} disabled={!students || !halls}>
               <Download className="mr-2 h-4 w-4" />
               Download Seating Chart
             </Button>
@@ -177,7 +190,7 @@ export default function ReportsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={handleDownloadAttendanceSheets}>
+            <Button onClick={handleDownloadAttendanceSheets} disabled={!students || !halls}>
               <Download className="mr-2 h-4 w-4" />
               Download Attendance Sheets
             </Button>

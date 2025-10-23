@@ -54,7 +54,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = React.useState('light');
 
   React.useEffect(() => {
-    const storedTheme = localStorage.getItem('theme') || 'light';
+    // Check for theme in localStorage only on client-side
+    const storedTheme = typeof window !== 'undefined' ? localStorage.getItem('theme') || 'light' : 'light';
     setTheme(storedTheme);
     document.documentElement.classList.toggle('dark', storedTheme === 'dark');
   }, []);
@@ -71,15 +72,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     router.push('/login');
   };
 
-  if (!isAuthenticated && !publicPaths.includes(pathname)) {
-    // This case is primarily handled by AuthGuard, but it's a good fallback.
-    return null;
-  }
-  
   if (publicPaths.includes(pathname)) {
     return <>{children}</>;
   }
 
+  // This is handled by AuthGuard now, but as a fallback.
+  if (!isAuthenticated && !publicPaths.includes(pathname)) {
+    return null;
+  }
+  
   return (
     <SidebarProvider>
       <Sidebar>

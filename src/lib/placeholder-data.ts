@@ -1,5 +1,8 @@
 import type { Hall, Student } from './types';
 
+// This file is now a fallback and might be removed later.
+// The primary data source is now Firestore.
+
 export const halls: Hall[] = [
   { id: 'hall-1', name: 'Main Auditorium', capacity: 24, rows: 4, cols: 6 },
   { id: 'hall-2', name: 'West Wing Hall', capacity: 16, rows: 4, cols: 4 },

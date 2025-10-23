@@ -1,19 +1,19 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { 
+    useUser as useFirebaseUser, 
+    initiateEmailSignIn,
+    initiateEmailSignUp,
+    useAuth as useFirebaseAuth,
+} from '@/firebase';
+import { signOut, updateProfile } from 'firebase/auth';
+import type { User as FirebaseUser } from 'firebase/auth';
 
-// This is a mock user type. In a real app, this would be more complex.
 type User = {
-  name: string;
-  email: string;
-};
-
-// This is a mock database of users. In a real app, you'd use a proper database.
-const mockUsers: { [email: string]: { name: string; passwordHash: string } } = {
-    'admin@seatingsage.com': {
-        name: 'Admin',
-        passwordHash: 'password123' // In a real app, this would be a securely hashed password
-    }
+  uid: string;
+  name: string | null;
+  email: string | null;
 };
 
 interface AuthContextType {
@@ -27,66 +27,70 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+// A helper function to map Firebase user to our app's user type
+const mapFirebaseUser = (firebaseUser: FirebaseUser): User => ({
+    uid: firebaseUser.uid,
+    name: firebaseUser.displayName,
+    email: firebaseUser.email,
+});
 
-  useEffect(() => {
-    // In a real app, you might validate a token from localStorage here
-    try {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    } catch (e) {
-        // If JSON parsing fails, just ignore it.
-    } finally {
-        setIsLoading(false);
-    }
-  }, []);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const { user: firebaseUser, isUserLoading } = useFirebaseUser();
+  const auth = useFirebaseAuth();
+
+  const user = firebaseUser ? mapFirebaseUser(firebaseUser) : null;
 
   const login = async (email: string, pass: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => { // Simulate network delay
-            const storedUser = mockUsers[email];
-            if (storedUser && storedUser.passwordHash === pass) {
-                const loggedInUser: User = { name: storedUser.name, email };
-                setUser(loggedInUser);
-                localStorage.setItem('user', JSON.stringify(loggedInUser));
-                resolve();
-            } else {
-                reject(new Error('Invalid email or password.'));
-            }
-        }, 500);
-    });
+    try {
+        initiateEmailSignIn(auth, email, pass);
+    } catch (error) {
+        console.error("Login error", error);
+        if (error instanceof Error) {
+            throw new Error(error.message);
+        }
+        throw new Error("An unknown error occurred during login.");
+    }
   };
 
   const register = async (name: string, email: string, pass: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => { // Simulate network delay
-            if (mockUsers[email]) {
-                return reject(new Error('User with this email already exists.'));
+    try {
+        // We can't use the non-blocking version here easily because we need the user credential to update the profile.
+        await initiateEmailSignUp(auth, email, pass);
+        
+        // This part runs after the user is created and signed in.
+        // A listener for onAuthStateChanged will eventually catch the new user state.
+        const unsubscribe = auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                unsubscribe(); // Stop listening to prevent multiple updates
+                try {
+                    await updateProfile(user, { displayName: name });
+                } catch (profileError) {
+                    console.error("Error updating profile:", profileError);
+                    // Decide how to handle this - maybe the user has to set their name later.
+                }
             }
-            mockUsers[email] = { name, passwordHash: pass };
-            const newUser: User = { name, email };
-            setUser(newUser);
-            localStorage.setItem('user', JSON.stringify(newUser));
-            resolve();
-        }, 500);
-    });
+        });
+        
+    } catch (error) {
+        console.error("Registration error", error);
+        if (error instanceof Error) {
+            throw new Error(error.message);
+        }
+        throw new Error("An unknown error occurred during registration.");
+    }
   };
 
   const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    // In a real app, you'd also redirect to the login page.
-    // This is handled in the AuthGuard component.
+    if(auth) {
+        signOut(auth);
+    }
   };
 
   const value = {
     user,
     isAuthenticated: !!user,
-    isLoading,
+    isLoading: isUserLoading,
     login,
     logout,
     register,

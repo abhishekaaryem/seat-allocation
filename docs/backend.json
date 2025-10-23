@@ -8,11 +8,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Student entity."
-        },
-        "studentId": {
-          "type": "string",
-          "description": "The student's ID number."
+          "description": "The student's ID number, used as the document ID."
         },
         "name": {
           "type": "string",
@@ -20,16 +16,12 @@
         },
         "branch": {
           "type": "string",
-          "description": "The branch of study for the student (e.g., Computer Science, Electrical Engineering)."
-        },
-        "hallAllocationId": {
-          "type": "string",
-          "description": "Reference to HallAllocation. (Relationship: HallAllocation 1:N Student)"
+          "enum": ["CSE", "ECE", "ME", "CE", "EEE"],
+          "description": "The branch of study for the student."
         }
       },
       "required": [
         "id",
-        "studentId",
         "name",
         "branch"
       ]
@@ -42,7 +34,7 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Hall entity."
+          "description": "Unique identifier for the Hall entity, used as document ID."
         },
         "name": {
           "type": "string",
@@ -51,144 +43,42 @@
         "capacity": {
           "type": "number",
           "description": "The maximum number of students that can be seated in the hall."
+        },
+        "rows": {
+            "type": "number",
+            "description": "Number of rows in the hall."
+        },
+        "cols": {
+            "type": "number",
+            "description": "Number of columns in the hall."
         }
       },
       "required": [
         "id",
         "name",
-        "capacity"
-      ]
-    },
-    "HallAllocation": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "HallAllocation",
-      "type": "object",
-      "description": "Represents the allocation of students to halls for a specific exam or event.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the HallAllocation entity."
-        },
-        "hallId": {
-          "type": "string",
-          "description": "Reference to Hall. (Relationship: Hall 1:N HallAllocation)"
-        },
-        "examId": {
-          "type": "string",
-          "description": "Reference to Exam. (Relationship: Exam 1:N HallAllocation)"
-        },
-        "seatNumber": {
-          "type": "number",
-          "description": "The assigned seat number for the student in the hall."
-        }
-      },
-      "required": [
-        "id",
-        "hallId",
-        "examId",
-        "seatNumber"
-      ]
-    },
-    "Exam": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Exam",
-      "type": "object",
-      "description": "Represents an exam or event for which seating is arranged.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Exam entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name or title of the exam (e.g., Midterm Exam, Final Exam)."
-        },
-        "dateTime": {
-          "type": "string",
-          "description": "The date and time of the exam.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "name",
-        "dateTime"
+        "capacity",
+        "rows",
+        "cols"
       ]
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/halls/{hallId}",
-        "definition": {
-          "entityName": "Hall",
-          "schema": {
-            "$ref": "#/backend/entities/Hall"
-          },
-          "description": "Stores information about each hall.  Managed by admins.",
-          "params": [
-            {
-              "name": "hallId",
-              "description": "Unique identifier for the hall."
-            }
-          ]
-        }
+    "/halls/{hallId}": {
+      "schema": {
+        "$ref": "#/entities/Hall"
       },
-      {
-        "path": "/exams/{examId}",
-        "definition": {
-          "entityName": "Exam",
-          "schema": {
-            "$ref": "#/backend/entities/Exam"
-          },
-          "description": "Stores information about each exam. Managed by admins.",
-          "params": [
-            {
-              "name": "examId",
-              "description": "Unique identifier for the exam."
-            }
-          ]
-        }
+      "description": "Stores information about each hall. Managed by authenticated users."
+    },
+    "/students/{studentId}": {
+      "schema": {
+        "$ref": "#/entities/Student"
       },
-      {
-        "path": "/hall_allocations/{hallAllocationId}",
-        "definition": {
-          "entityName": "HallAllocation",
-          "schema": {
-            "$ref": "#/backend/entities/HallAllocation"
-          },
-          "description": "Stores hall allocation data. Includes denormalized 'members' map for authorization independence.",
-          "params": [
-            {
-              "name": "hallAllocationId",
-              "description": "Unique identifier for the hall allocation."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/students/{studentId}",
-        "definition": {
-          "entityName": "Student",
-          "schema": {
-            "$ref": "#/backend/entities/Student"
-          },
-          "description": "Stores information about each student.",
-          "params": [
-            {
-              "name": "studentId",
-              "description": "Unique identifier for the student."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore structure is designed to support the SeatingSage application, focusing on secure and efficient data management for students, halls, exams, and their allocations. It prioritizes authorization independence by denormalizing relevant data, eliminating the need for `get()` calls in security rules and enabling atomic operations. Segregation of data based on access needs is also a key consideration.\n\n**Authorization Independence & QAPs:**\n\n*   The structure uses path-based ownership for user-specific data (if any user-specific data existed). Collaborative access, if needed, would utilize a membership map within the hall allocations.\n*   The design supports secure list operations (QAPs) as all documents within a collection share the same security requirements, enforced through structural segregation. This is achieved through explicit path structures for halls, exams, and allocations.\n\n**Explanation of Collections:**\n\n*   `/halls`: Stores hall data. No specific ownership, potentially managed by admins.\n*   `/exams`: Stores exam data. No specific ownership, potentially managed by admins.\n*   `/hall_allocations`: Stores hall allocation data. Contains references to both halls and exams. To ensure Authorization Independence, this collection requires a denormalized `members` map. This map would contain the user ID of the user who created the allocation, along with their role.\n*   `/students`: Stores student data. Includes hall allocation ID to determine student assignments. Consider a `branch` field in `hall_allocation` to enforce restrictions for same branch seating."
+      "description": "Stores information about each student. Managed by authenticated users."
+    }
   }
 }
