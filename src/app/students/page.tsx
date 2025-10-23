@@ -45,15 +45,17 @@ export default function StudentsPage() {
   const handleSaveStudent = (studentData: Omit<Student, 'id'> & { id?: string }) => {
     if (!firestore) return;
     
-    if (studentData.id && selectedStudent) { // Editing
+    // Editing an existing student
+    if (studentData.id && selectedStudent) { 
         const studentRef = doc(firestore, 'students', selectedStudent.id);
+        // Do not update the ID, only other fields
         const { id, ...dataToUpdate } = studentData;
         setDocumentNonBlocking(studentRef, dataToUpdate, { merge: true });
         toast({ title: "Student Updated", description: `${studentData.name} has been updated successfully.` });
-    } else if (studentData.id) { // Adding with specific ID
+    } else if (studentData.id) { // Adding a new student with a specific ID (from form or upload)
         const studentRef = doc(firestore, 'students', studentData.id);
         const { id, ...dataToAdd } = studentData;
-        setDocumentNonBlocking(studentRef, dataToAdd, {});
+        setDocumentNonBlocking(studentRef, dataToAdd, { merge: true }); // Use merge to be safe
         toast({ title: "Student Added", description: `${studentData.name} has been added successfully.` });
     }
     handleCloseForm();
@@ -72,10 +74,12 @@ export default function StudentsPage() {
   const handleDataUploaded = ({ students: uploadedStudents }: { students?: Student[] }) => {
     if (!firestore || !uploadedStudents) return;
 
-    const studentsCollection = collection(firestore, 'students');
     uploadedStudents.forEach(student => {
-        const studentRef = doc(studentsCollection, student.id);
-        setDocumentNonBlocking(studentRef, student, { merge: true });
+      if (student.id) {
+        handleSaveStudent(student);
+      } else {
+        console.warn("Skipping student without ID:", student);
+      }
     });
     
     toast({ title: "Success", description: "Student data is being uploaded." });

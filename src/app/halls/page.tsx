@@ -8,7 +8,7 @@ import { HallFormDialog } from '@/components/hall-form-dialog';
 import { DataUploadDialog } from '@/components/data-upload-dialog';
 import type { Hall } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { useCollection, useFirestore, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import {
   AlertDialog,
@@ -44,18 +44,26 @@ export default function HallsPage() {
 
     const handleSaveHall = (hallData: Omit<Hall, 'id'>, hallId?: string) => {
       if (!firestore) return;
+
         if (hallId) {
             // Editing existing hall
             const hallRef = doc(firestore, 'halls', hallId);
             setDocumentNonBlocking(hallRef, hallData, { merge: true });
             toast({ title: "Hall Updated", description: `${hallData.name} has been updated successfully.` });
         } else {
-            // Adding new hall
-            const hallsCollection = collection(firestore, 'halls');
-            addDocumentNonBlocking(hallsCollection, hallData);
-            toast({ title: "Hall Added", description: `${hallData.name} has been added successfully.` });
+            // Adding new hall - this branch is not hit from the form, but could be from uploads
+            // The form should have an ID for new halls.
+            toast({ title: "Error", description: "Cannot create a hall without an ID.", variant: 'destructive' });
         }
         handleCloseForm();
+    };
+    
+    const handleSaveHallWithId = (hallData: Hall) => {
+        if (!firestore) return;
+        const hallRef = doc(firestore, 'halls', hallData.id);
+        const { id, ...data } = hallData;
+        setDocumentNonBlocking(hallRef, data, { merge: true });
+        toast({ title: "Hall Saved", description: `${hallData.name} has been saved.` });
     };
 
     const handleDeleteHall = () => {
@@ -71,10 +79,12 @@ export default function HallsPage() {
     const handleDataUploaded = ({ halls: uploadedHalls }: { halls?: Hall[] }) => {
         if (!firestore || !uploadedHalls) return;
 
-        const hallsCollection = collection(firestore, 'halls');
         uploadedHalls.forEach(hall => {
-            const hallRef = doc(hallsCollection, hall.id);
-            setDocumentNonBlocking(hallRef, hall, { merge: true });
+            if (hall.id) {
+                handleSaveHallWithId(hall);
+            } else {
+                console.warn("Skipping hall without ID:", hall);
+            }
         });
         
         toast({ title: "Success", description: "Hall data is being uploaded." });
@@ -107,7 +117,7 @@ export default function HallsPage() {
         open={isFormOpen} 
         onOpenChange={handleCloseForm} 
         hall={selectedHall}
-        onSave={handleSaveHall}
+        onSave={handleSaveHallWithId}
       />
       <DataUploadDialog
         open={isUploadOpen}
