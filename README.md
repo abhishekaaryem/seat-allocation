@@ -6,12 +6,21 @@ SeatingSage is a web application designed to streamline and automate the process
 
 - **Framework**: [Next.js](https://nextjs.org/) (with App Router)
 - **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Backend**: [Firebase](https://firebase.google.com/) (Authentication and Firestore)
 - **UI Library**: [React](https://react.dev/)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/)
 - **Component Library**: [ShadCN UI](https://ui.shadcn.com/)
 - **Icons**: [Lucide React](https://lucide.dev/)
 - **PDF Generation**: [jsPDF](https://github.com/parallax/jsPDF) & [jspdf-autotable](https://github.com/simonbengtsson/jsPDF-AutoTable)
 - **AI/Generative**: [Genkit](https://firebase.google.com/docs/genkit) (for potential future AI features)
+
+## Prerequisites
+
+To run or contribute to this project, you will need the following software installed on your machine:
+
+- **Node.js**: Version 20.x or later is recommended.
+- **npm**: (Node Package Manager) which comes with Node.js.
+- **Firebase Account**: The application requires a Firebase project for authentication and database services.
 
 ## Project Overview
 
