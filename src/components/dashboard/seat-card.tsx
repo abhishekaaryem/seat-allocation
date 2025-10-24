@@ -48,7 +48,7 @@ export default function SeatCard({ student, seatNumber, isConflict, branchColor,
           >
             {children}
             <CardContent className="p-0 flex flex-col items-center justify-between gap-1 w-full flex-1 min-h-0">
-              <div className="w-full flex justify-between items-center px-1 text-xs text-foreground/70">
+              <div className="w-full flex items-center gap-2 px-1 text-xs text-foreground/70">
                 <span>{student.branch}</span>
                 <span>#{seatNumber}</span>
               </div>
