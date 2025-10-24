@@ -51,13 +51,17 @@ export function DataUploadDialog({ open, onOpenChange, onDataUploaded, uploadTyp
     try {
       if (studentFile && showStudents) {
         const students = await parseFile<Student>(studentFile, ['id', 'name', 'branch']);
-        dataToUpload.students = students;
+        dataToUpload.students = students.map(s => ({
+            ...s,
+            id: String(s.id) // Ensure ID is a string
+        }));
       }
       if (hallFile && showHalls) {
         const halls = await parseFile<Hall>(hallFile, ['id', 'name', 'capacity', 'rows', 'cols']);
-        // Ensure numeric types are correct
+        // Ensure numeric types are correct and id is a string
         dataToUpload.halls = halls.map(h => ({
             ...h,
+            id: String(h.id), // Ensure ID is a string
             capacity: Number(h.capacity),
             rows: Number(h.rows),
             cols: Number(h.cols)
