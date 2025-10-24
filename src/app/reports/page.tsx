@@ -103,7 +103,11 @@ export default function ReportsPage() {
 
         const hallSeats = seatingArrangement
             .filter(seat => seat.hallId === hall.id)
-            .sort((a, b) => a.student.id.localeCompare(b.student.id));
+            .sort((a, b) => {
+              const aSeatNumber = a.row * hall.cols + a.col;
+              const bSeatNumber = b.row * hall.cols + b.col;
+              return aSeatNumber - bSeatNumber;
+            });
 
         doc.autoTable({
             startY: 20,
