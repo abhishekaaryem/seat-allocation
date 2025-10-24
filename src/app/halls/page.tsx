@@ -42,18 +42,17 @@ export default function HallsPage() {
         setSelectedHall(null);
     };
 
-    const handleSaveHall = (hallData: Omit<Hall, 'id'>, hallId?: string) => {
-      if (!firestore) return;
+    const handleSaveHall = (hallData: Hall) => {
+        if (!firestore) return;
+        const hallRef = doc(firestore, 'halls', hallData.id);
+        const { id, ...data } = hallData;
 
-        if (hallId) {
-            // Editing existing hall
-            const hallRef = doc(firestore, 'halls', hallId);
-            setDocumentNonBlocking(hallRef, hallData, { merge: true });
+        if (selectedHall) { // Editing existing hall
+            setDocumentNonBlocking(hallRef, data, { merge: true });
             toast({ title: "Hall Updated", description: `${hallData.name} has been updated successfully.` });
-        } else {
-            // Adding new hall - this branch is not hit from the form, but could be from uploads
-            // The form should have an ID for new halls.
-            toast({ title: "Error", description: "Cannot create a hall without an ID.", variant: 'destructive' });
+        } else { // Adding new hall from form
+            setDocumentNonBlocking(hallRef, data, { merge: true });
+            toast({ title: "Hall Added", description: `${hallData.name} has been added successfully.` });
         }
         handleCloseForm();
     };
@@ -63,7 +62,6 @@ export default function HallsPage() {
         const hallRef = doc(firestore, 'halls', hallData.id);
         const { id, ...data } = hallData;
         setDocumentNonBlocking(hallRef, data, { merge: true });
-        toast({ title: "Hall Saved", description: `${hallData.name} has been saved.` });
     };
 
     const handleDeleteHall = () => {
@@ -117,7 +115,7 @@ export default function HallsPage() {
         open={isFormOpen} 
         onOpenChange={handleCloseForm} 
         hall={selectedHall}
-        onSave={handleSaveHallWithId}
+        onSave={handleSaveHall}
       />
       <DataUploadDialog
         open={isUploadOpen}
